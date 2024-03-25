@@ -16,6 +16,8 @@ use crate::{BridgeModel, CargoOptions};
 pub enum Provider {
     /// GitHub
     GitHub,
+    /// GitLab
+    GitLab,
 }
 
 /// Platform
@@ -156,7 +158,17 @@ impl GenerateCI {
 
         match self.ci {
             Provider::GitHub => self.generate_github(project_name, &bridge, sdist),
+            Provider::GitLab => self.generate_gitlab(project_name, &bridge, sdist),
         }
+    }
+
+    pub(crate) fn generate_gitlab(
+        &self,
+        project_name: &str,
+        bridge_model: &BridgeModel,
+        sdist: bool,
+    ) -> Result<String> {
+        Ok(String::from("Not implemented yet"))
     }
 
     pub(crate) fn generate_github(
@@ -1396,4 +1408,10 @@ mod tests {
                       args: --non-interactive --skip-existing wheels-*/*"#]];
         expected.assert_eq(&conf);
     }
-}
+
+    // TODO: Test generate_gitlab()
+    // TODO: Test generate_gitlab_abi3()
+    // TODO: Test generate_gitlab_zig_pytest()
+    // TODO: Test generate_gitlab_bin_no_binding()
+
+  }
