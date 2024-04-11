@@ -243,6 +243,14 @@ mkdir -p .github/workflows
 maturin generate-ci github > .github/workflows/CI.yml
 ```
 
+## GitLab CI
+
+If your project uses GitLab CI, you can use `gitlab` value for the `CI provider` option to generate a GitLab CI pipeline file.
+
+```bash
+maturin generate-ci gitlab > .gitlab-ci.yml
+```
+
 There are some options to customize the generated workflow file:
 
 ```
@@ -256,6 +264,7 @@ Arguments:
 
           Possible values:
           - github: GitHub
+          - gitlab: GitLab
 
 Options:
   -m, --manifest-path <PATH>
