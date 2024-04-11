@@ -8,6 +8,7 @@ Arguments:
 
           Possible values:
           - github: GitHub
+          - gitlab: GitLab
 
 Options:
   -m, --manifest-path <PATH>
