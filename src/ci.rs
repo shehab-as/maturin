@@ -200,6 +200,9 @@ impl GenerateCI {
 #    {gen_cmd}
 #
 default:
+  image: 
+  name: ghcr.io/pyo3/maturin:latest
+  entrypoint: ['']
   interruptible: true
   cache:
     paths:
@@ -211,8 +214,8 @@ default:
       - target/debug/build
 
 variables:
-    CARGO_HOME: '$CI_PROJECT_DIR/.cargo'
-    PIP_CACHE_DIR: '$CI_PROJECT_DIR/.cache/pip'
+  CARGO_HOME: '$CI_PROJECT_DIR/.cargo'
+  PIP_CACHE_DIR: '$CI_PROJECT_DIR/.cache/pip'
 
 stages: 
   - test
@@ -221,9 +224,6 @@ stages:
 
 test:
   stage: test
-  image: 
-    name: ghcr.io/pyo3/maturin:latest
-    entrypoint: ['']
   parallel:
     matrix:
       - PYTHON_VERSION:
@@ -243,12 +243,8 @@ test:
 build-linux:
   needs: ['test']
   stage: build
-  image: 
-    name: ghcr.io/pyo3/maturin:latest
-    entrypoint: ['']
   parallel:
     matrix:
-      # tier 1 targets, see https://doc.rust-lang.org/beta/rustc/platform-support.html
       - TARGET:
         - x86_64-unknown-linux-gnu
         - x86_64-unknown-linux-musl
@@ -262,20 +258,15 @@ build-linux:
     - rustup target add $TARGET
   script:
     - maturin build -i python3.8 -i python3.9 -i python3.10 -i python3.11 -i python3.12 --release --target $TARGET --zig
-  artifacts:
-    paths:
-      - target/wheels/*.whl
 
 build-macos:
   needs: ['test']
   stage: build
-  image: 
-    name: ghcr.io/pyo3/maturin:latest
-    entrypoint: ['']
   parallel:
     matrix:
       - TARGET:
         - x86_64-apple-darwin
+        - aarch64-apple-darwin
   before_script:
     - python3.8 -m venv venv
     - source venv/bin/activate
@@ -283,16 +274,11 @@ build-macos:
     - rustup target add $TARGET
   script:
     - maturin build -i python3.8 -i python3.9 -i python3.10 -i python3.11 -i python3.12 --release --target $TARGET --zig
-  artifacts:
-    paths:
-      - target/wheels/*.whl
 
+# to support more windows targets use windows runners
 build-windows:
   needs: ['test']
   stage: build
-  image: 
-    name: ghcr.io/pyo3/maturin:latest
-    entrypoint: ['']
   parallel:
     matrix:
       - TARGET:
@@ -304,12 +290,8 @@ build-windows:
     - rustup target add $TARGET
     # required for windows support
     - cargo add pyo3 -F generate-import-lib
-    - export ZIG_COMMAND='python -m ziglang'
   script:
     - maturin build -i python3.8 -i python3.9 -i python3.10 -i python3.11 -i python3.12 --release --target $TARGET
-  artifacts:
-    paths:
-      - target/wheels/*.whl
   
 publish:
   stage: release
@@ -323,8 +305,24 @@ publish:
     - if: $CI_PIPELINE_SOURCE == 'push'
       when: manual
       allow_failure: true
+  variables:
+    MATURIN_REPOSITORY_URL: 'https://pypi.org'
+    MATURIN_USERNAME: 'your username'
+    MATURIN_PASSWORD: 'your password'
   script:
-    - maturin publish --non-interactive --skip-existing",
+    - pip install ziglang
+    # not using parallel here since it creates so many runners
+    - declare -a targets = ('x86_64-unknown-linux-gnu' 'x86_64-unknown-linux-musl' 
+      'aarch64-unknown-linux-gnu' 'aarch64-unknown-linux-musl' 'i686-unknown-linux-gnu'
+       'x86_64-apple-darwin' 'aarch64-apple-darwin' 'x86_64-pc-windows-msvc' )
+    - for target in '${{targets[@]}}'
+        do 
+          rustup target add $target
+          maturin publish --non-interactive  --target $target
+          -i python3.8 -i python3.9 -i python3.10 -i python3.11 -i python3.12
+          --zig 
+        done
+      ",
             version = env!("CARGO_PKG_VERSION"),
         );
 
